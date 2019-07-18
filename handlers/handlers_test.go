@@ -3,37 +3,44 @@ package handlers_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"time"
 
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-
+	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/mocks"
+	"github.com/deepakjacob/restyle/oauth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"golang.org/x/oauth2"
 )
 
 var _ = Describe("Auth handler", func() {
 	var handler *handlers.OAuth2
-	var mockProvider *mocks.Provider
-
+	var mockProvider *oauth.Provider
+	var mockUserService *mocks.UserService
+	var mockConfig *mocks.Config
+	var mockGoogleClient *mocks.GoogleClient
 	BeforeEach(func() {
-		mockProvider = &mocks.Provider{
-			Config: &oauth2.Config{
-				Endpoint:     google.Endpoint,
-				ClientID:     "clientID",
-				ClientSecret: "clientSecret",
-				RedirectURL:  "server_auth_callback",
-				Scopes: []string{
-					"scope1",
-					"scope2",
-				},
-			},
+		mockGoogleClient = &mocks.GoogleClient{}
+		mockGoogleClient.GetCall.Returns.GoogleUser = &oauth.GoogleUser{
+			Email: "test@test.com",
+		}
+		mockConfig = &mocks.Config{}
+		mockConfig.ExchangeCall.Returns.Token = &oauth2.Token{
+			AccessToken: "access_token",
+		}
+		mockProvider = &oauth.Provider{
+			Config:     mockConfig,
+			HTTPClient: mockGoogleClient,
+		}
+		mockUserService = &mocks.UserService{}
+		mockUserService.FindCall.Returns.User = &domain.User{
+			Email: "test@test.com",
 		}
 		handler = &handlers.OAuth2{
-			Provider: mockProvider,
-			RandStr:  mocks.RandStr,
+			Provider:    mockProvider,
+			RandStr:     mocks.RandStr,
+			UserService: mockUserService,
 		}
 	})
 
@@ -43,36 +50,34 @@ var _ = Describe("Auth handler", func() {
 		handler := http.HandlerFunc(handler.Handle)
 		handler.ServeHTTP(resp, req)
 		Expect(resp.Code).To(Equal(307))
-		u, _ := url.Parse(resp.Header().Get("Location"))
-		Expect(u.Scheme).To(Equal("https"))
-		Expect(u.Host).To(Equal("accounts.google.com"))
-		q := u.Query()
-		Expect((q["state"])[0]).To(Equal("a_random_string"))
-		Expect((q["redirect_uri"])[0]).To(Equal("server_auth_callback"))
-	})
-	It("sets a matching cookie in response", func() {
-		resp := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/auth", nil)
-		handler := http.HandlerFunc(handler.Handle)
-		handler.ServeHTTP(resp, req)
-		request := &http.Request{Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]}}
+		request := &http.Request{
+			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
+		}
 		cookie, _ := request.Cookie("state")
-		u, _ := url.Parse(resp.Header().Get("Location"))
-		q := u.Query()
-		Expect((q["state"])[0]).To(Equal(cookie.Value))
-		Expect(cookie.Value).To(Equal("a_random_string"))
+		Expect(cookie).Should(BeAssignableToTypeOf(&http.Cookie{}))
+		Expect(("a_random_string")).To(Equal(cookie.Value))
+		// TODO: fix this
+		// Expect(cookie.Domain).To(Equal("/"))
+		// Expect(cookie.HttpOnly).Should(BeTrue())
+		Expect(mockConfig.AuthCodeURLCall.Receives.State).To(Equal("a_random_string"))
 	})
-	It("should fail with not authorized", func() {
+	It("callback handler fetches google user", func() {
 		resp := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/auth/callback", nil)
-		handler := http.HandlerFunc(handler.Handle)
+		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
+		handler := http.HandlerFunc(handler.HandleCallback)
+		req.AddCookie(&http.Cookie{
+			HttpOnly: true,
+			Path:     "/",
+			Value:    "userstate",
+			Name:     "state",
+			Expires:  time.Now().Add(365 * 24 * time.Hour),
+		})
 		handler.ServeHTTP(resp, req)
-		request := &http.Request{Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]}}
-		cookie, _ := request.Cookie("state")
-		u, _ := url.Parse(resp.Header().Get("Location"))
-		q := u.Query()
-		Expect((q["state"])[0]).To(Equal(cookie.Value))
-		Expect(cookie.Value).To(Equal("a_random_string"))
+		Expect(mockConfig.ExchangeCall.Receives.Code).To(Equal("usercode"))
+		Expect(mockGoogleClient.GetCall.Receives.URL).To(
+			Equal("https://www.googleapis.com/oauth2/v2/userinfo?access_token=access_token"))
+		Expect(mockUserService.FindCall.Receives.Email).To(
+			Equal(mockGoogleClient.GetCall.Returns.GoogleUser.Email))
+		Expect(resp.Code).To(Equal(307))
 	})
-
 })

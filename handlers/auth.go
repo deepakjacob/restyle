@@ -1,18 +1,30 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/deepakjacob/restyle/domain"
+	"github.com/deepakjacob/restyle/oauth"
 )
+
+// UserService get user from firestore
+type UserService interface {
+	Find(context.Context, string) (*domain.User, error)
+}
 
 type provider interface {
 	RedirectURL(string) string
+	GoogleUser(context.Context, string) (*oauth.GoogleUser, error)
 }
 
 // OAuth2 provides auth services
 type OAuth2 struct {
-	Provider provider
-	RandStr  func() string
+	Provider    provider
+	UserService UserService
+	RandStr     func() string
 }
 
 // Handle handles /auth
@@ -32,12 +44,34 @@ func (o *OAuth2) Handle(w http.ResponseWriter, r *http.Request) {
 
 // HandleCallback handles /auth/callback
 func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
-	state, _ := r.Cookie("state")
-	urlState := r.URL.Query().Get("state")
-	if urlState != state.Value {
-		http.Redirect(w, r, "/error?status=403reason=state", http.StatusForbidden)
+	state, err := r.Cookie("state")
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+	if r.URL.Query().Get("state") != state.Value {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 	code := r.URL.Query().Get("code")
-	w.Write([]byte(code))
+	if code == "" {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+	gUser, err := o.Provider.GoogleUser(r.Context(), code)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	fmt.Printf("%s\n", gUser.Email)
+
+	_, err = o.UserService.Find(r.Context(), gUser.Email)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	// check user in the system before forward to the app
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
 }

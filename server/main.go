@@ -1,15 +1,23 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/deepakjacob/restyle/db"
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/oauth"
+	"github.com/deepakjacob/restyle/service"
+	"github.com/deepakjacob/restyle/templates"
 	"github.com/deepakjacob/restyle/util"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -41,24 +49,62 @@ func Config() (*oauth2.Config, error) {
 	}, nil
 }
 
+type httpClient struct {
+	Client *http.Client
+}
+
+func (h *httpClient) Get(url string) (*oauth.GoogleUser, error) {
+	response, err := h.Client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
+	}
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed read response: %s", err.Error())
+	}
+	var user oauth.GoogleUser
+	if err := json.Unmarshal([]byte(contents), &user); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal user json to struct %v", err.Error())
+	}
+	return &user, nil
+}
+
 func setupRouteHandlers() *mux.Router {
-
-	r := mux.NewRouter()
-
-	// ----------------------- Login / Logout    -----------------------
 	cfg, err := Config()
 	if err != nil {
 		logger.Log.Fatal("application missing mandatory params", zap.Error(err))
 	}
+
+	fsClient, _ := db.New(context.Background(), os.Getenv("GOOGLE_PROJECT_ID"))
+
+	client := &httpClient{
+		Client: &http.Client{
+			Timeout: time.Second * 10,
+		},
+	}
+	userServiceImpl := &service.UserServiceImpl{fsClient}
+
 	auth := &handlers.OAuth2{
 		Provider: &oauth.Provider{
-			Config: cfg,
+			HTTPClient: client,
+			Config:     &oauth.OAuth2Configurer{Config: cfg},
 		},
-		RandStr: util.RandStr,
+		UserService: userServiceImpl,
+		RandStr:     util.RandStr,
 	}
 
+	r := mux.NewRouter()
 	r.HandleFunc("/auth", auth.Handle)
 	r.HandleFunc("/auth/callback", auth.HandleCallback)
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		t, _ := template.New("index").Parse(templates.Index)
+		t.Execute(w, nil)
+	})
+	r.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
+		t, _ := template.New("error").Parse(templates.Error)
+		t.Execute(w, nil)
+	})
 
 	return r
 }

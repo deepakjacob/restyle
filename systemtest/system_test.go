@@ -29,6 +29,6 @@ var _ = Describe("the webserver", func() {
 		defer resp.Body.Close()
 
 		// TODO : elaborate testing required
-		Expect(resp.StatusCode).To(Equal(200))
+		Expect(resp.StatusCode).To(Equal(403))
 	})
 })
