@@ -5,9 +5,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/deepakjacob/restyle/config"
 	"github.com/deepakjacob/restyle/db"
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
@@ -37,9 +37,7 @@ func main() {
 	if err := logger.Init(-1, "2006-01-02T15:04:05Z07:00"); err != nil {
 		log.Fatal(err)
 	}
-
 	r := setupRouteHandlers()
-
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         "127.0.0.1:8000",
@@ -51,12 +49,13 @@ func main() {
 }
 
 func setupAuth() (*handlers.OAuth2, error) {
-	cfg, err := oauth.Config()
+	ctx := config.BootstrapCtx(context.Background())
+	cfg, err := oauth.Config(ctx)
 	if err != nil {
-		logger.Log.Fatal("application missing mandatory params", zap.Error(err))
+		logger.Log.Fatal("auth bootstrap", zap.Error(err))
 		return nil, err
 	}
-	fsClient, _ := db.New(context.Background(), os.Getenv("GOOGLE_PROJECT_ID"))
+	fsClient, _ := db.New(ctx)
 	userServiceImpl := &service.UserServiceImpl{fsClient}
 	auth := &handlers.OAuth2{
 		Provider: &oauth.Provider{

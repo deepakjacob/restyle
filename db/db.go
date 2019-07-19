@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/firestore"
+	"github.com/deepakjacob/restyle/config"
 )
 
 // FireStore specifics
@@ -12,8 +13,12 @@ type FireStore struct {
 }
 
 // New return a fire client connection
-func New(ctx context.Context, projectID string) (*FireStore, error) {
-	client, err := firestore.NewClient(ctx, projectID)
+func New(ctx context.Context) (*FireStore, error) {
+	env, err := config.Getenv(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := firestore.NewClient(ctx, env.ProjectID)
 	if err != nil {
 		return nil, err
 	}
