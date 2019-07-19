@@ -25,11 +25,6 @@ func (p *Provider) GoogleUser(ctx context.Context, code string) (*GoogleUser, er
 	return p.HTTPClient.Get(url)
 }
 
-// HTTPClient for http operations
-type HTTPClient interface {
-	Get(string) (*GoogleUser, error)
-}
-
 // OAuth2Config interface for google struct
 type OAuth2Config interface {
 	AuthCodeURL(string) string
