@@ -18,4 +18,5 @@ require (
 	google.golang.org/api v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610 // indirect
 	google.golang.org/grpc v1.22.0 // indirect
+	gopkg.in/square/go-jose.v2 v2.3.1
 )

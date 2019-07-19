@@ -22,6 +22,7 @@ type Env struct {
 	RedirectURL    string
 }
 
+// BootstrapCtx context initialization
 func BootstrapCtx(parent context.Context) context.Context {
 	projectID := os.Getenv("GOOGLE_PROJECT_ID")
 	clientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
