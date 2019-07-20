@@ -42,13 +42,13 @@ var _ = Describe("Auth handler", func() {
 			UserID: "12345",
 		}
 		mockSigner = &mocks.Signer{}
+		mockSigner.SignEncryptCall.Returns.SignedValue = "signed_user"
 		handler = &handlers.OAuth2{
 			Provider:    mockProvider,
 			RandStr:     mocks.RandStr,
 			UserService: mockUserService,
 			Signer:      mockSigner,
 		}
-		mockSigner.SignEncryptCall.Returns.SignedValue = "signed_user"
 	})
 
 	It("responds with code 307 and string redirect url", func() {
@@ -63,9 +63,6 @@ var _ = Describe("Auth handler", func() {
 		cookie, err := request.Cookie("state")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(("a_random_string")).To(Equal(cookie.Value))
-		// TODO: fix this
-		// Expect(cookie.Domain).To(Equal("/"))
-		// Expect(cookie.HttpOnly).Should(BeTrue())
 		Expect(mockConfig.AuthCodeURLCall.Receives.State).To(Equal("a_random_string"))
 	})
 
@@ -97,40 +94,40 @@ var _ = Describe("Auth handler", func() {
 		//   Expect(resp.Code).To(Equal(307))
 	})
 
-	Context("when auth fails", func() {
+	It("should return http forbidden if state token is missing in url", func() {
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
+		handler := http.HandlerFunc(handler.HandleCallback)
+		handler.ServeHTTP(resp, req)
+		request := &http.Request{
+			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
+		}
+		_, err := request.Cookie("state")
+		Expect(err).To(HaveOccurred())
+		Expect(resp.Code).To(Equal(403))
+	})
+
+	It("should return http forbidden if code is missing in url", func() {
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
+		req.AddCookie(&http.Cookie{
+			HttpOnly: true,
+			Path:     "/",
+			Value:    "userstate",
+			Name:     "state",
+			Expires:  time.Now().Add(365 * 24 * time.Hour),
+		})
+		handler := http.HandlerFunc(handler.HandleCallback)
+		handler.ServeHTTP(resp, req)
+		Expect(resp.Code).To(Equal(403))
+	})
+
+	Context("user lookup fails", func() {
 		BeforeEach(func() {
 			mockUserService.FindCall.Returns.Error = errors.New("user not found")
 		})
 
-		It("should return http forbidden if state token is missing in url", func() {
-			resp := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
-			handler := http.HandlerFunc(handler.HandleCallback)
-			handler.ServeHTTP(resp, req)
-			request := &http.Request{
-				Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
-			}
-			_, err := request.Cookie("state")
-			Expect(err).To(HaveOccurred())
-			Expect(resp.Code).To(Equal(403))
-		})
-
-		It("should return http forbidden if code is missing in url", func() {
-			resp := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
-			req.AddCookie(&http.Cookie{
-				HttpOnly: true,
-				Path:     "/",
-				Value:    "userstate",
-				Name:     "state",
-				Expires:  time.Now().Add(365 * 24 * time.Hour),
-			})
-			handler := http.HandlerFunc(handler.HandleCallback)
-			handler.ServeHTTP(resp, req)
-			Expect(resp.Code).To(Equal(403))
-		})
-
-		It("show throw internal server error if user not found", func() {
+		It("should throw internal server error", func() {
 			resp := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
 			handler := http.HandlerFunc(handler.HandleCallback)
@@ -147,6 +144,26 @@ var _ = Describe("Auth handler", func() {
 				Equal("https://www.googleapis.com/oauth2/v2/userinfo?access_token=access_token"))
 			Expect(mockUserService.FindCall.Receives.Email).To(
 				Equal(mockGoogleClient.GetCall.Returns.GoogleUser.Email))
+			Expect(resp.Code).To(Equal(500))
+		})
+	})
+	Context("when signing fails", func() {
+		BeforeEach(func() {
+			mockSigner.SignEncryptCall.Returns.Err = errors.New("Signing failed for some reason")
+		})
+
+		It("should throw internal server error ", func() {
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
+			handler := http.HandlerFunc(handler.HandleCallback)
+			req.AddCookie(&http.Cookie{
+				HttpOnly: true,
+				Path:     "/",
+				Value:    "userstate",
+				Name:     "state",
+				Expires:  time.Now().Add(365 * 24 * time.Hour),
+			})
+			handler.ServeHTTP(resp, req)
 			Expect(resp.Code).To(Equal(500))
 		})
 	})
