@@ -7,6 +7,7 @@ import (
 
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/oauth"
+	"github.com/deepakjacob/restyle/signer"
 )
 
 // UserService get user from firestore
@@ -24,6 +25,7 @@ type OAuth2 struct {
 	Provider    provider
 	UserService UserService
 	RandStr     func() string
+	Signer      signer.JWTSigner
 }
 
 // Handle handles /auth
@@ -63,11 +65,29 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = o.UserService.Find(r.Context(), gUser.Email)
+	user, err := o.UserService.Find(r.Context(), gUser.Email)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	ut := &domain.UserToken{
+		UserID: user.UserID,
+		Email:  user.Email,
+	}
+	token, err := o.Signer.SignEncrypt(ut)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	cookie := http.Cookie{
+		HttpOnly: true,
+		Path:     "/",
+		Value:    token,
+		Name:     "_ut",
+		Expires:  time.Now().Add(365 * 24 * time.Hour),
+	}
+	http.SetCookie(w, &cookie)
+
 	// check user in the system before forward to the app
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 

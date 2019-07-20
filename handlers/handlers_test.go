@@ -21,6 +21,8 @@ var _ = Describe("Auth handler", func() {
 	var mockUserService *mocks.UserService
 	var mockConfig *mocks.Config
 	var mockGoogleClient *mocks.GoogleClient
+	var mockSigner *mocks.Signer
+
 	BeforeEach(func() {
 		mockGoogleClient = &mocks.GoogleClient{}
 		mockGoogleClient.GetCall.Returns.GoogleUser = &oauth.GoogleUser{
@@ -36,13 +38,17 @@ var _ = Describe("Auth handler", func() {
 		}
 		mockUserService = &mocks.UserService{}
 		mockUserService.FindCall.Returns.User = &domain.User{
-			Email: "test@test.com",
+			Email:  "test@test.com",
+			UserID: "12345",
 		}
+		mockSigner = &mocks.Signer{}
 		handler = &handlers.OAuth2{
 			Provider:    mockProvider,
 			RandStr:     mocks.RandStr,
 			UserService: mockUserService,
+			Signer:      mockSigner,
 		}
+		mockSigner.SignEncryptCall.Returns.SignedValue = "signed_user"
 	})
 
 	It("responds with code 307 and string redirect url", func() {
@@ -63,7 +69,7 @@ var _ = Describe("Auth handler", func() {
 		Expect(mockConfig.AuthCodeURLCall.Receives.State).To(Equal("a_random_string"))
 	})
 
-	It("callback handler fetches google user", func() {
+	It("callback handler set a cookie named _ut and redirects", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
 		handler := http.HandlerFunc(handler.HandleCallback)
@@ -80,7 +86,15 @@ var _ = Describe("Auth handler", func() {
 			Equal("https://www.googleapis.com/oauth2/v2/userinfo?access_token=access_token"))
 		Expect(mockUserService.FindCall.Receives.Email).To(
 			Equal(mockGoogleClient.GetCall.Returns.GoogleUser.Email))
-		Expect(resp.Code).To(Equal(307))
+		Expect(mockSigner.SignEncryptCall.Receives.User.Email).To(Equal("test@test.com"))
+		request := &http.Request{
+			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
+		}
+
+		cookie, err := request.Cookie("_ut")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(("signed_user")).To(Equal(cookie.Value))
+		//   Expect(resp.Code).To(Equal(307))
 	})
 
 	Context("when auth fails", func() {

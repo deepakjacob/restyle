@@ -14,6 +14,14 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
+type JWTSigner interface {
+	SignEncrypt(*domain.UserToken) (string, error)
+	Decrypt(string) (*domain.UserToken, error)
+}
+
+type Signer struct {
+}
+
 const (
 	jwtKey          = "JWT"
 	upProject       = "Up Project"
@@ -38,15 +46,14 @@ var (
 		},
 		(&jose.EncrypterOptions{}).WithType(jwtKey).WithContentType(jwtKey),
 	)
-
-	errEmptyVals = errors.New("input email or id is empty")
 )
 
-//SignEncryptJWT sign and encrypt JWTs with claims
-func SignEncryptJWT(user *domain.UserToken) (string, error) {
+//SignEncrypt sign and encrypt JWTs with claims
+func (s *Signer) SignEncrypt(user *domain.UserToken) (string, error) {
 	if user.Email == "" || user.UserID == "" {
-		logger.Log.Error("jwt signing failed", zap.Error(errEmptyVals))
-		return "", errEmptyVals
+		err := errors.New("input email or id is empty")
+		logger.Log.Error("jwt signing failed", zap.Error(err))
+		return "", err
 	}
 
 	cl := jwt.Claims{
@@ -70,8 +77,8 @@ func SignEncryptJWT(user *domain.UserToken) (string, error) {
 	return raw, nil
 }
 
-// DecryptJWT decrypt JWT represented as a raw string
-func DecryptJWT(raw string) (*domain.UserToken, error) {
+// Decrypt decrypt JWT represented as a raw string
+func (s *Signer) Decrypt(raw string) (*domain.UserToken, error) {
 	tok, err := jwt.ParseSignedAndEncrypted(raw)
 	if err != nil {
 		logger.Log.Error("jwt parsing failed", zap.Error(err))

@@ -23,6 +23,7 @@ func setupRouteHandlers() *mux.Router {
 	auth, err := setupAuth()
 	if err != nil {
 		logger.Log.Fatal("initialization err", zap.Error(err))
+		return nil
 	}
 	r := mux.NewRouter()
 
@@ -52,7 +53,6 @@ func setupAuth() (*handlers.OAuth2, error) {
 	ctx := config.BootstrapCtx(context.Background())
 	cfg, err := oauth.Config(ctx)
 	if err != nil {
-		logger.Log.Fatal("auth bootstrap", zap.Error(err))
 		return nil, err
 	}
 	fsClient, _ := db.New(ctx)
