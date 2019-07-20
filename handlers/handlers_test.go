@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -53,8 +54,8 @@ var _ = Describe("Auth handler", func() {
 		request := &http.Request{
 			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
 		}
-		cookie, _ := request.Cookie("state")
-		Expect(cookie).Should(BeAssignableToTypeOf(&http.Cookie{}))
+		cookie, err := request.Cookie("state")
+		Expect(err).ToNot(HaveOccurred())
 		Expect(("a_random_string")).To(Equal(cookie.Value))
 		// TODO: fix this
 		// Expect(cookie.Domain).To(Equal("/"))
@@ -82,32 +83,57 @@ var _ = Describe("Auth handler", func() {
 		Expect(resp.Code).To(Equal(307))
 	})
 
-	It("should return http forbidden if state token is missing in url", func() {
-		resp := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
-		handler := http.HandlerFunc(handler.HandleCallback)
-		handler.ServeHTTP(resp, req)
-		request := &http.Request{
-			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
-		}
-		_, err := request.Cookie("state")
-		Expect(err).To(HaveOccurred())
-		Expect(resp.Code).To(Equal(403))
-	})
-
-	It("should return http forbidden if code is missing in url", func() {
-		resp := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
-		req.AddCookie(&http.Cookie{
-			HttpOnly: true,
-			Path:     "/",
-			Value:    "userstate",
-			Name:     "state",
-			Expires:  time.Now().Add(365 * 24 * time.Hour),
+	Context("when auth fails", func() {
+		BeforeEach(func() {
+			mockUserService.FindCall.Returns.Error = errors.New("user not found")
 		})
-		handler := http.HandlerFunc(handler.HandleCallback)
-		handler.ServeHTTP(resp, req)
-		Expect(resp.Code).To(Equal(403))
-	})
 
+		It("should return http forbidden if state token is missing in url", func() {
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
+			handler := http.HandlerFunc(handler.HandleCallback)
+			handler.ServeHTTP(resp, req)
+			request := &http.Request{
+				Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
+			}
+			_, err := request.Cookie("state")
+			Expect(err).To(HaveOccurred())
+			Expect(resp.Code).To(Equal(403))
+		})
+
+		It("should return http forbidden if code is missing in url", func() {
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
+			req.AddCookie(&http.Cookie{
+				HttpOnly: true,
+				Path:     "/",
+				Value:    "userstate",
+				Name:     "state",
+				Expires:  time.Now().Add(365 * 24 * time.Hour),
+			})
+			handler := http.HandlerFunc(handler.HandleCallback)
+			handler.ServeHTTP(resp, req)
+			Expect(resp.Code).To(Equal(403))
+		})
+
+		It("show throw internal server error if user not found", func() {
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
+			handler := http.HandlerFunc(handler.HandleCallback)
+			req.AddCookie(&http.Cookie{
+				HttpOnly: true,
+				Path:     "/",
+				Value:    "userstate",
+				Name:     "state",
+				Expires:  time.Now().Add(365 * 24 * time.Hour),
+			})
+			handler.ServeHTTP(resp, req)
+			Expect(mockConfig.ExchangeCall.Receives.Code).To(Equal("usercode"))
+			Expect(mockGoogleClient.GetCall.Receives.URL).To(
+				Equal("https://www.googleapis.com/oauth2/v2/userinfo?access_token=access_token"))
+			Expect(mockUserService.FindCall.Receives.Email).To(
+				Equal(mockGoogleClient.GetCall.Returns.GoogleUser.Email))
+			Expect(resp.Code).To(Equal(500))
+		})
+	})
 })
