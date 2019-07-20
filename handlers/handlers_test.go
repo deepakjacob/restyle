@@ -61,6 +61,7 @@ var _ = Describe("Auth handler", func() {
 		// Expect(cookie.HttpOnly).Should(BeTrue())
 		Expect(mockConfig.AuthCodeURLCall.Receives.State).To(Equal("a_random_string"))
 	})
+
 	It("callback handler fetches google user", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
@@ -80,4 +81,33 @@ var _ = Describe("Auth handler", func() {
 			Equal(mockGoogleClient.GetCall.Returns.GoogleUser.Email))
 		Expect(resp.Code).To(Equal(307))
 	})
+
+	It("should return http forbidden if state token is missing in url", func() {
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
+		handler := http.HandlerFunc(handler.HandleCallback)
+		handler.ServeHTTP(resp, req)
+		request := &http.Request{
+			Header: http.Header{"Cookie": resp.HeaderMap["Set-Cookie"]},
+		}
+		_, err := request.Cookie("state")
+		Expect(err).To(HaveOccurred())
+		Expect(resp.Code).To(Equal(403))
+	})
+
+	It("should return http forbidden if code is missing in url", func() {
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
+		req.AddCookie(&http.Cookie{
+			HttpOnly: true,
+			Path:     "/",
+			Value:    "userstate",
+			Name:     "state",
+			Expires:  time.Now().Add(365 * 24 * time.Hour),
+		})
+		handler := http.HandlerFunc(handler.HandleCallback)
+		handler.ServeHTTP(resp, req)
+		Expect(resp.Code).To(Equal(403))
+	})
+
 })

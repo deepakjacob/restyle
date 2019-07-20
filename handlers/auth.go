@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -63,8 +62,6 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
-
-	fmt.Printf("%s\n", gUser.Email)
 
 	_, err = o.UserService.Find(r.Context(), gUser.Email)
 	if err != nil {
