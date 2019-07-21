@@ -51,7 +51,7 @@ var _ = Describe("Auth handler", func() {
 		}
 	})
 
-	It("responds with code 307 and string redirect url", func() {
+	It("/auth should responds with code 307 and string redirect url", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth", nil)
 		handler := http.HandlerFunc(handler.Handle)
@@ -66,7 +66,7 @@ var _ = Describe("Auth handler", func() {
 		Expect(mockConfig.AuthCodeURLCall.Receives.State).To(Equal("a_random_string"))
 	})
 
-	It("callback handler set a cookie named _ut and redirects", func() {
+	It("/auth/callback should set a cookie named _ut and redirects", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
 		handler := http.HandlerFunc(handler.HandleCallback)
@@ -91,10 +91,10 @@ var _ = Describe("Auth handler", func() {
 		cookie, err := request.Cookie("_ut")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(("signed_user")).To(Equal(cookie.Value))
-		//   Expect(resp.Code).To(Equal(307))
+		Expect(resp.Code).To(Equal(307))
 	})
 
-	It("should return http forbidden if state token is missing in url", func() {
+	It("/auth/callback should return http forbidden if state token is missing in url", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/callback?code=usercode", nil)
 		handler := http.HandlerFunc(handler.HandleCallback)
@@ -107,7 +107,7 @@ var _ = Describe("Auth handler", func() {
 		Expect(resp.Code).To(Equal(403))
 	})
 
-	It("should return http forbidden if code is missing in url", func() {
+	It("/auth/callback should return http forbidden if code is missing in url", func() {
 		resp := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/callback?state=userstate", nil)
 		req.AddCookie(&http.Cookie{
@@ -127,7 +127,7 @@ var _ = Describe("Auth handler", func() {
 			mockUserService.FindCall.Returns.Error = errors.New("user not found")
 		})
 
-		It("should throw internal server error", func() {
+		It("/auth/callback should throw internal server error on user lookup failure", func() {
 			resp := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
 			handler := http.HandlerFunc(handler.HandleCallback)
@@ -149,10 +149,10 @@ var _ = Describe("Auth handler", func() {
 	})
 	Context("when signing fails", func() {
 		BeforeEach(func() {
-			mockSigner.SignEncryptCall.Returns.Err = errors.New("Signing failed for some reason")
+			mockSigner.SignEncryptCall.Returns.Err = errors.New("signing failed")
 		})
 
-		It("should throw internal server error ", func() {
+		It("/auth/callback should throw internal server error when signing fails", func() {
 			resp := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/auth/callback?state=userstate&code=usercode", nil)
 			handler := http.HandlerFunc(handler.HandleCallback)
