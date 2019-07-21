@@ -52,7 +52,7 @@ var (
 func (s *Signer) SignEncrypt(user *domain.UserToken) (string, error) {
 	if user.Email == "" || user.UserID == "" {
 		err := errors.New("input email or id is empty")
-		logger.Log.Error("jwt signing failed", zap.Error(err))
+		logger.Log.Error("jwt signer", zap.Error(err))
 		return "", err
 	}
 

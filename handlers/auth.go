@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/deepakjacob/restyle/domain"
+	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/oauth"
 	"github.com/deepakjacob/restyle/signer"
+	"go.uber.org/zap"
 )
 
 // UserService get user from firestore
@@ -70,6 +72,8 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	logger.Log.Debug("auth:callback::user",
+		zap.String("email", user.Email), zap.String("ID", user.UserID))
 	ut := &domain.UserToken{
 		UserID: user.UserID,
 		Email:  user.Email,
@@ -87,8 +91,39 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 	}
 	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "/api/", http.StatusTemporaryRedirect)
+}
 
-	// check user in the system before forward to the app
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+type userKey string
 
+var userCtxKey userKey
+
+func setUserToCtx(ctx context.Context, user *domain.User) context.Context {
+	return context.WithValue(ctx, userCtxKey, user)
+}
+
+//Middleware function to execute before accessing secure urls
+func (o *OAuth2) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("_ut")
+		if err != nil {
+			logger.Log.Error("unable to get the uer cookie", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		u, err := o.Signer.Decrypt(cookie.Value)
+		if err != nil {
+			logger.Log.Error("Not authorised", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		user, err := o.UserService.Find(r.Context(), u.Email)
+		if err != nil {
+			logger.Log.Error("user not found", zap.Error(err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		usrCtx := setUserToCtx(r.Context(), user)
+		next.ServeHTTP(w, r.WithContext(usrCtx))
+	})
 }

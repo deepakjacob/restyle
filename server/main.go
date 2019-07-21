@@ -13,6 +13,7 @@ import (
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/oauth"
 	"github.com/deepakjacob/restyle/service"
+	"github.com/deepakjacob/restyle/signer"
 	"github.com/deepakjacob/restyle/templates"
 	"github.com/deepakjacob/restyle/util"
 	"github.com/gorilla/mux"
@@ -29,8 +30,10 @@ func setupRouteHandlers() *mux.Router {
 
 	r.HandleFunc("/auth", auth.Handle)
 	r.HandleFunc("/auth/callback", auth.HandleCallback)
-	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/error", errorHandler)
+
+	s := r.PathPrefix("/api").Subrouter()
+	s.HandleFunc("/", indexHandler)
 
 	return r
 }
@@ -57,6 +60,7 @@ func setupAuth() (*handlers.OAuth2, error) {
 	}
 	fsClient, _ := db.New(ctx)
 	userServiceImpl := &service.UserServiceImpl{fsClient}
+	signer := &signer.Signer{}
 	auth := &handlers.OAuth2{
 		Provider: &oauth.Provider{
 			HTTPClient: oauth.Client,
@@ -64,6 +68,7 @@ func setupAuth() (*handlers.OAuth2, error) {
 		},
 		UserService: userServiceImpl,
 		RandStr:     util.RandStr,
+		Signer:      signer,
 	}
 	return auth, nil
 }

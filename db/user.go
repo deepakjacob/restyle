@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"log"
 
 	"github.com/deepakjacob/restyle/domain"
 )
@@ -18,6 +17,5 @@ func (fs *FireStore) Find(ctx context.Context, email string) (*domain.User, erro
 		return nil, err
 	}
 	user.Email = email
-	log.Fatal(user)
 	return user, nil
 }
