@@ -13,15 +13,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// UploadService impl for interface
-type UploadService struct {
+// UploadService contracts
+type UploadService interface {
+	Upload(context.Context, *domain.ImgAttrs, io.Reader) error
+}
+
+// UploadServiceImpl impl for interface
+type UploadServiceImpl struct {
 	FireStore    *db.FireStore
 	CloudStorage *storage.CloudStorage
 	RandStr      func() string
 }
 
 // Upload for uploading image and associated data
-func (u *UploadService) Upload(
+func (u *UploadServiceImpl) Upload(
 	ctx context.Context, attrs *domain.ImgAttrs, r io.Reader) error {
 	user, err := oauth.UserFromCtx(ctx)
 	if err != nil {
