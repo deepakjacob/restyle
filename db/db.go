@@ -7,12 +7,12 @@ import (
 	"github.com/deepakjacob/restyle/config"
 )
 
-// FireStore specifics
+// FireStore connection
 type FireStore struct {
 	*firestore.Client
 }
 
-// New return a fire client connection
+// New return firestore client connection
 func New(ctx context.Context) (*FireStore, error) {
 	env, err := config.Getenv(ctx)
 	if err != nil {

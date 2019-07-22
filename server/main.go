@@ -23,7 +23,7 @@ import (
 func setupRouteHandlers() *mux.Router {
 	auth, err := setupAuth()
 	if err != nil {
-		logger.Log.Fatal("initialization err", zap.Error(err))
+		logger.Log.Fatal("error during initialization", zap.Error(err))
 		return nil
 	}
 	r := mux.NewRouter()
@@ -62,7 +62,7 @@ func setupAuth() (*handlers.OAuth2, error) {
 	userServiceImpl := &service.UserServiceImpl{fsClient}
 	signer := &signer.Signer{}
 	auth := &handlers.OAuth2{
-		Provider: &oauth.Provider{
+		Provider: &oauth.ProviderImpl{
 			HTTPClient: oauth.Client,
 			Config:     &oauth.OAuth2Configurer{Config: cfg},
 		},

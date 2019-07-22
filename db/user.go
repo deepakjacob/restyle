@@ -6,8 +6,8 @@ import (
 	"github.com/deepakjacob/restyle/domain"
 )
 
-// Find user
-func (fs *FireStore) Find(ctx context.Context, email string) (*domain.User, error) {
+// User gets the user with the provided email.
+func (fs *FireStore) User(ctx context.Context, email string) (*domain.User, error) {
 	docsnap, err := fs.Collection("users").Doc(email).Get(ctx)
 	if err != nil {
 		return nil, err

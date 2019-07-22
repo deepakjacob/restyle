@@ -2,12 +2,14 @@ package handlers_test
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/handlers"
+	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/mocks"
 	"github.com/deepakjacob/restyle/oauth"
 	. "github.com/onsi/ginkgo"
@@ -17,12 +19,16 @@ import (
 
 var _ = Describe("Auth handler", func() {
 	var handler *handlers.OAuth2
-	var mockProvider *oauth.Provider
+	var mockProvider *oauth.ProviderImpl
 	var mockUserService *mocks.UserService
 	var mockConfig *mocks.Config
 	var mockGoogleClient *mocks.GoogleClient
 	var mockSigner *mocks.Signer
-
+	// if following lines are omitted for some reason then the
+	// logging statement will throw a nil pointer error
+	if err := logger.Init(-1, ""); err != nil {
+		log.Fatal("logger initialization failed for tests")
+	}
 	BeforeEach(func() {
 		mockGoogleClient = &mocks.GoogleClient{}
 		mockGoogleClient.GetCall.Returns.GoogleUser = &oauth.GoogleUser{
@@ -32,7 +38,7 @@ var _ = Describe("Auth handler", func() {
 		mockConfig.ExchangeCall.Returns.Token = &oauth2.Token{
 			AccessToken: "access_token",
 		}
-		mockProvider = &oauth.Provider{
+		mockProvider = &oauth.ProviderImpl{
 			Config:     mockConfig,
 			HTTPClient: mockGoogleClient,
 		}

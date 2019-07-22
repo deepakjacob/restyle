@@ -1,33 +1,23 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/oauth"
+	"github.com/deepakjacob/restyle/service"
 	"github.com/deepakjacob/restyle/signer"
 	"go.uber.org/zap"
 )
 
-// UserService get user from firestore
-type UserService interface {
-	Find(context.Context, string) (*domain.User, error)
-}
-
-type provider interface {
-	RedirectURL(string) string
-	GoogleUser(context.Context, string) (*oauth.GoogleUser, error)
-}
-
 // OAuth2 provides auth services
 type OAuth2 struct {
-	Provider    provider
-	UserService UserService
-	RandStr     func() string
+	Provider    oauth.Provider
+	UserService service.UserService
 	Signer      signer.JWTSigner
+	RandStr     func() string
 }
 
 // Handle handles /auth
@@ -70,6 +60,9 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	user, err := o.UserService.Find(r.Context(), gUser.Email)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// TODO: change to the below impl to redirect to register a new user
+		// logger.Log.Info("auth:callback::new user", zap.String("email", gUser.Email))
+		// http.RedirectHandler("/api/newuser", 307)
 		return
 	}
 	logger.Log.Debug("auth:callback::user",
@@ -80,7 +73,8 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := o.Signer.SignEncrypt(ut)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w,
+			http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	cookie := http.Cookie{
@@ -94,36 +88,28 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/api/", http.StatusTemporaryRedirect)
 }
 
-type userKey string
-
-var userCtxKey userKey
-
-func setUserToCtx(ctx context.Context, user *domain.User) context.Context {
-	return context.WithValue(ctx, userCtxKey, user)
-}
-
 //Middleware function to execute before accessing secure urls
 func (o *OAuth2) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("_ut")
 		if err != nil {
-			logger.Log.Error("unable to get the uer cookie", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			http.Error(w,
+				http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 		u, err := o.Signer.Decrypt(cookie.Value)
 		if err != nil {
-			logger.Log.Error("Not authorised", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w,
+				http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		user, err := o.UserService.Find(r.Context(), u.Email)
 		if err != nil {
-			logger.Log.Error("user not found", zap.Error(err))
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w,
+				http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		usrCtx := setUserToCtx(r.Context(), user)
+		usrCtx := oauth.UserToCtx(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(usrCtx))
 	})
 }
