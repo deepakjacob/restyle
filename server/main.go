@@ -45,12 +45,12 @@ func setupRouteHandlers() *mux.Router {
 	userService := &service.UserServiceImpl{fsClient}
 	uploadService := &service.UploadServiceImpl{fsClient, csClient, util.RandStr}
 
-	auth, err := setupAuth(authconfig, userService)
+	auth, err := auth(authconfig, userService)
 	if err != nil {
 		logger.Log.Fatal("error in oauth setup", zap.Error(err))
 		return nil
 	}
-	upload := setupUpload(uploadService)
+	upload := upload(uploadService)
 
 	r := mux.NewRouter()
 
@@ -65,9 +65,8 @@ func setupRouteHandlers() *mux.Router {
 	return r
 }
 func main() {
-	if err := logger.Init(-1, "2006-01-02T15:04:05Z07:00"); err != nil {
-		log.Fatal(err)
-	}
+	initLogger()
+
 	r := setupRouteHandlers()
 	srv := &http.Server{
 		Handler:      r,
@@ -76,16 +75,16 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Log.Info("server listening", zap.String("address", srv.Addr))
+	logger.Log.Info("server about to listen @", zap.String("address", srv.Addr))
 	log.Fatal(srv.ListenAndServe())
 }
 
-func setupUpload(uploadService service.UploadService) *handlers.Upload {
+func upload(uploadService service.UploadService) *handlers.Upload {
 	upload := &handlers.Upload{UploadService: uploadService}
 	return upload
 }
 
-func setupAuth(config *oauth2.Config, userService service.UserService) (*handlers.OAuth2, error) {
+func auth(config *oauth2.Config, userService service.UserService) (*handlers.OAuth2, error) {
 	signer := &signer.Signer{}
 	auth := &handlers.OAuth2{
 		Provider: &oauth.ProviderImpl{
@@ -107,4 +106,10 @@ var indexHandler = func(w http.ResponseWriter, r *http.Request) {
 var errorHandler = func(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.New("error").Parse(templates.Error)
 	t.Execute(w, nil)
+}
+
+func initLogger() {
+	if err := logger.Init(-1, "2006-01-02T15:04:05Z07:00"); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -22,7 +22,6 @@ type Upload struct {
 
 // Handle handles the upload of the image file along with the mandatory params
 func (u *Upload) Handle(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	r.ParseMultipartForm(10 << 20)
 	file, _, err := r.FormFile("img_file")
 	if err != nil {
@@ -41,7 +40,7 @@ func (u *Upload) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.UploadService.Upload(ctx, attrs, file)
+	err = u.UploadService.Upload(r.Context(), attrs, file)
 	if err != nil {
 		logger.Log.Error("upload:handle:: error saving image and/or attributes", zap.Error(err))
 		http.Error(w,

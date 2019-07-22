@@ -18,17 +18,15 @@ import (
 )
 
 var _ = Describe("Auth handler", func() {
+	if err := logger.Init(-1, ""); err != nil {
+		log.Fatal("logger initialization failed for tests")
+	}
 	var handler *handlers.OAuth2
 	var mockProvider *oauth.ProviderImpl
 	var mockUserService *mocks.UserService
 	var mockConfig *mocks.Config
 	var mockGoogleClient *mocks.GoogleClient
 	var mockSigner *mocks.Signer
-	// if following lines are omitted for some reason then the
-	// logging statement will throw a nil pointer error
-	if err := logger.Init(-1, ""); err != nil {
-		log.Fatal("logger initialization failed for tests")
-	}
 	BeforeEach(func() {
 		mockGoogleClient = &mocks.GoogleClient{}
 		mockGoogleClient.GetCall.Returns.GoogleUser = &oauth.GoogleUser{
