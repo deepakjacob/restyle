@@ -96,6 +96,9 @@ func uploadRequest(uri string, form map[string]string, field, path string) (*htt
 		return nil, err
 	}
 	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, err
+	}
 
 	for key, val := range form {
 		_ = writer.WriteField(key, val)
@@ -106,6 +109,10 @@ func uploadRequest(uri string, form map[string]string, field, path string) (*htt
 	}
 
 	req, err := http.NewRequest("POST", uri, body)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, nil
 }

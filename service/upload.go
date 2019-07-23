@@ -5,11 +5,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/deepakjacob/restyle/db"
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/oauth"
-	"github.com/deepakjacob/restyle/storage"
 	"go.uber.org/zap"
 )
 
@@ -20,9 +18,9 @@ type UploadService interface {
 
 // UploadServiceImpl impl for interface
 type UploadServiceImpl struct {
-	FireStore    *db.FireStore
-	CloudStorage *storage.CloudStorage
-	RandStr      func() string
+	FireStoreService    FireStoreService
+	CloudStorageService CloudStorageService
+	RandStr             func() string
 }
 
 // Upload for uploading image and associated data
@@ -33,15 +31,16 @@ func (u *UploadServiceImpl) Upload(
 		logger.Log.Error("service:upload", zap.Error(err))
 		return errors.New("user not found in context")
 	}
-	err = u.FireStore.Upload(ctx, user, attrs)
+	fileName := u.RandStr()
+	prefixed := derivePrefix(attrs, fileName)
+	err = u.FireStoreService.Uplxoad(ctx, user, attrs, fileName)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
 		logger.Log.Error("service:upload:firestore", zap.Error(err))
 		return errors.New("error in saving image attrbutes for db")
 	}
 	bucket := getDefaultBucket()
-	prefixed := derivePrefix(attrs, u.RandStr)
-	err = u.CloudStorage.Upload(ctx, user, bucket, attrs, r, prefixed)
+	err = u.CloudStorageService.Upload(ctx, user, bucket, attrs, r, prefixed)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
 		logger.Log.Error("service:upload:storage", zap.Error(err))
@@ -51,8 +50,8 @@ func (u *UploadServiceImpl) Upload(
 }
 
 // TODO: optimize this
-func derivePrefix(attrs *domain.ImgAttrs, f func() string) string {
-	return (attrs.ObjType + "/" + attrs.Material + "/" + f())
+func derivePrefix(attrs *domain.ImgAttrs, name string) string {
+	return attrs.ObjType + "/" + attrs.Material + "/" + name
 }
 
 // TODO: get the project id from the env config

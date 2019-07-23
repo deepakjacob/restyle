@@ -9,6 +9,16 @@ import (
 
 // UploadService upload service
 type UploadService struct {
+	ImageNameCall struct {
+		Returns struct {
+			Name string
+		}
+	}
+	ImagePrefixCall struct {
+		Returns struct {
+			Prefix string
+		}
+	}
 	UploadCall struct {
 		Receives struct {
 			Ctx      context.Context
