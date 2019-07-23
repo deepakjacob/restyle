@@ -32,7 +32,7 @@ func (u *UploadServiceImpl) Upload(
 		return errors.New("user not found in context")
 	}
 	fileName := u.RandStr()
-	prefixed := derivePrefix(attrs, fileName)
+	prefixed := storagePattern(attrs, fileName)
 	err = u.FireStoreService.Upload(ctx, user, attrs, fileName)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
@@ -50,7 +50,7 @@ func (u *UploadServiceImpl) Upload(
 }
 
 // TODO: optimize this
-func derivePrefix(attrs *domain.ImgAttrs, name string) string {
+func storagePattern(attrs *domain.ImgAttrs, name string) string {
 	return attrs.ObjType + "/" + attrs.Material + "/" + name
 }
 

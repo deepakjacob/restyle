@@ -14,9 +14,22 @@ type FireStoreService struct {
 			Ctx      context.Context
 			User     *domain.User
 			ImgAttrs *domain.ImgAttrs
+			FileName string
 		}
 		Returns struct {
 			Err error
+		}
+	}
+	ListCall struct {
+		Receives struct {
+			Ctx       context.Context
+			User      *domain.User
+			ImgSearch *domain.ImgSearch
+			Pattern   string
+		}
+		Returns struct {
+			ImgSearchResult *domain.ImgSearchResult
+			Err             error
 		}
 	}
 }
@@ -27,7 +40,18 @@ func (fs *FireStoreService) Upload(ctx context.Context, user *domain.User,
 	fs.UploadCall.Receives.Ctx = ctx
 	fs.UploadCall.Receives.User = user
 	fs.UploadCall.Receives.ImgAttrs = imgAttrs
+	fs.UploadCall.Receives.FileName = fileName
 	return fs.UploadCall.Returns.Err
+}
+
+// List persists attributes of a file upload
+func (fs *FireStoreService) List(ctx context.Context, user *domain.User,
+	imgAttrs *domain.ImgSearch, pattern string) (*domain.ImgSearchResult, error) {
+	fs.ListCall.Receives.Ctx = ctx
+	fs.ListCall.Receives.User = user
+	fs.ListCall.Receives.ImgSearch = imgAttrs
+	fs.ListCall.Receives.Pattern = pattern
+	return fs.ListCall.Returns.ImgSearchResult, fs.ListCall.Returns.Err
 }
 
 // CloudStorageService upload service

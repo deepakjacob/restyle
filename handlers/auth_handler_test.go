@@ -22,11 +22,11 @@ var _ = Describe("Auth handler", func() {
 		log.Fatal("logger initialization failed for tests")
 	}
 	var handler *handlers.OAuth2
+	var mockConfig *mocks.Config
+	var mockSigner *mocks.Signer
+	var mockGoogleClient *mocks.GoogleClient
 	var mockProvider *oauth.ProviderImpl
 	var mockUserService *mocks.UserService
-	var mockConfig *mocks.Config
-	var mockGoogleClient *mocks.GoogleClient
-	var mockSigner *mocks.Signer
 	BeforeEach(func() {
 		mockGoogleClient = &mocks.GoogleClient{}
 		mockGoogleClient.GetCall.Returns.GoogleUser = &oauth.GoogleUser{
