@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -16,6 +15,8 @@ import (
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/mocks"
+	"github.com/deepakjacob/restyle/oauth"
+	"github.com/deepakjacob/restyle/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
@@ -26,9 +27,17 @@ var _ = Describe("Upload handler", func() {
 		log.Fatal("logger initialization failed for tests")
 	}
 	var handler *handlers.Upload
-	var mockUploadService *mocks.UploadService
+	var mockUploadService *service.UploadServiceImpl
+	var mockFireStoreService *mocks.FireStoreService
+	var mockCloudStorageService *mocks.CloudStorageService
 	BeforeEach(func() {
-		mockUploadService = &mocks.UploadService{}
+		mockFireStoreService = &mocks.FireStoreService{}
+		mockCloudStorageService = &mocks.CloudStorageService{}
+		mockUploadService = &service.UploadServiceImpl{
+			FireStoreService:    mockFireStoreService,
+			CloudStorageService: mockCloudStorageService,
+			RandStr:             mocks.RandStr,
+		}
 		handler = &handlers.Upload{
 			UploadService: mockUploadService,
 		}
@@ -52,18 +61,16 @@ var _ = Describe("Upload handler", func() {
 		if err != nil {
 			logger.Log.Fatal("upload failed", zap.Error(err))
 		}
+
 		handler := http.HandlerFunc(handler.Handle)
 		handler.ServeHTTP(resp, req)
 		Expect(resp.Code).To(Equal(200))
-		Expect(mockUploadService.UploadCall.Receives.ImgAttrs).To(Equal(mapImgAttrs(form)))
+		Expect(mockFireStoreService.UploadCall.Receives.ImgAttrs).To(Equal(mapImgAttrs(form)))
+		Expect(mockCloudStorageService.UploadCall.Receives.ImgAttrs).To(Equal(mapImgAttrs(form)))
 	})
 
 	Context("user lookup fails", func() {
-		BeforeEach(func() {
-			mockUploadService.UploadCall.Returns.Error = errors.New("upload error")
-		})
-
-		It("/upload should throw internal server error on upload failure", func() {
+		It("/upload should throw internal server error if no user in context", func() {
 		})
 	})
 
@@ -114,5 +121,8 @@ func uploadRequest(uri string, form map[string]string, field, path string) (*htt
 	}
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	return req, nil
+	return req.WithContext(oauth.UserToCtx(req.Context(), &domain.User{
+		Email:  "test@test.com",
+		UserID: "101010101",
+	})), nil
 }

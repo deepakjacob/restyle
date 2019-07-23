@@ -33,7 +33,7 @@ func (u *UploadServiceImpl) Upload(
 	}
 	fileName := u.RandStr()
 	prefixed := derivePrefix(attrs, fileName)
-	err = u.FireStoreService.Uplxoad(ctx, user, attrs, fileName)
+	err = u.FireStoreService.Upload(ctx, user, attrs, fileName)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
 		logger.Log.Error("service:upload:firestore", zap.Error(err))
