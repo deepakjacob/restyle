@@ -7,7 +7,7 @@ import (
 	"github.com/deepakjacob/restyle/domain"
 )
 
-// FireStoreService upload service
+// FireStoreService service
 type FireStoreService struct {
 	UploadCall struct {
 		Receives struct {
@@ -44,7 +44,7 @@ func (fs *FireStoreService) Upload(ctx context.Context, user *domain.User,
 	return fs.UploadCall.Returns.Err
 }
 
-// List persists attributes of a file upload
+// List
 func (fs *FireStoreService) List(ctx context.Context, user *domain.User,
 	imgAttrs *domain.ImgSearch, pattern string) (*domain.ImgSearchResult, error) {
 	fs.ListCall.Receives.Ctx = ctx

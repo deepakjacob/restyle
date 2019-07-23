@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"log"
@@ -11,6 +11,8 @@ import (
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/mocks"
 	"github.com/deepakjacob/restyle/service"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
 )
 
