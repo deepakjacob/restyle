@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -38,8 +39,14 @@ func (l *List) Handle(w http.ResponseWriter, r *http.Request) {
 			http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	// TODO: fix
+	json, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w,
+			http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(json)
 }
 
 func parseSearchAttrs(vals url.Values) (*domain.ImgSearch, error) {
