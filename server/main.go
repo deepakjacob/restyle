@@ -42,8 +42,14 @@ func setupRouteHandlers() *mux.Router {
 		logger.Log.Fatal("cloud storage", zap.Error(err))
 		return nil
 	}
+	firestoreService := &service.FireStoreServiceImpl{fsClient}
+	cloudStorageService := &service.CloudStorageServiceImpl{csClient}
 	userService := &service.UserServiceImpl{fsClient}
-	uploadService := &service.UploadServiceImpl{fsClient, csClient, util.RandStr}
+	uploadService := &service.UploadServiceImpl{
+		FireStoreService:    firestoreService,
+		CloudStorageService: cloudStorageService,
+		RandStr:             util.RandStr,
+	}
 
 	auth, err := auth(authconfig, userService)
 	if err != nil {
