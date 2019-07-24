@@ -6,7 +6,6 @@ import (
 
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/logger"
-	"github.com/deepakjacob/restyle/oauth"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +17,7 @@ type ListService interface {
 
 // ListServiceImpl impl for interface
 type ListServiceImpl struct {
+	User             func(context.Context) (*domain.User, error)
 	FireStoreService FireStoreService
 	// CloudStorageService CloudStorageService
 }
@@ -25,7 +25,7 @@ type ListServiceImpl struct {
 // List of images based on search attrbutes
 func (u *ListServiceImpl) List(
 	ctx context.Context, attrs *domain.ImgSearch) (*domain.ImgSearchResult, error) {
-	user, err := oauth.UserFromCtx(ctx)
+	user, err := u.User(ctx)
 	if err != nil {
 		logger.Log.Error("service:list", zap.Error(err))
 		return nil, errors.New("user not found in context")

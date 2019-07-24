@@ -2,18 +2,27 @@ package system_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"time"
 
+	"github.com/deepakjacob/restyle/config"
+	"github.com/deepakjacob/restyle/db"
+	"github.com/deepakjacob/restyle/domain"
+	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
+	"github.com/deepakjacob/restyle/service"
+	"github.com/deepakjacob/restyle/storage"
+	"github.com/deepakjacob/restyle/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap"
 )
 
 var _ = Describe("the webserver", func() {
@@ -79,20 +88,51 @@ var _ = Describe("the webserver", func() {
 		err = writer.Close()
 		if err != nil {
 			log.Fatal(err)
+			log.Fatal(err)
+			log.Fatal(err)
 
 		}
-		url := fmt.Sprintf("http://%s/api/upload", serverAddress)
 
-		req, err := http.NewRequest("POST", url, body)
+		req, err := http.NewRequest("POST", "/upload", body)
 		Expect(err).NotTo(HaveOccurred())
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		httpClient := http.Client{
-			Timeout: 5 * time.Second,
+		rr := httptest.NewRecorder()
+		ctx := config.BootstrapCtx(context.Background())
+
+		logger.Log.Info("init connections to firestore")
+		fsClient, err := db.New(ctx)
+		if err != nil {
+			logger.Log.Fatal("firestore", zap.Error(err))
+			return
 		}
-		res, err := httpClient.Do(req)
+		logger.Log.Info("init connections to cloud storage")
+		csClient, err := storage.New(ctx)
+		if err != nil {
+			logger.Log.Fatal("cloud storage", zap.Error(err))
+			return
+		}
+
+		firestoreService := &service.FireStoreServiceImpl{fsClient}
+		cloudStorageService := &service.CloudStorageServiceImpl{csClient}
+		var mockUser = func(ctx context.Context) (*domain.User, error) {
+			return &domain.User{
+				Email:  "test@test.com",
+				UserID: "090808989898",
+			}, nil
+		}
+		uploadService := &service.UploadServiceImpl{
+			FireStoreService:    firestoreService,
+			CloudStorageService: cloudStorageService,
+			RandStr:             util.RandStr,
+			User:                mockUser,
+		}
+
+		upload := &handlers.Upload{UploadService: uploadService}
+		logger.Log.Debug("test::upload")
+		handler := http.HandlerFunc(upload.Handle)
+		handler.ServeHTTP(rr, req)
+
 		Expect(err).NotTo(HaveOccurred())
-		defer res.Body.Close()
 		// Check the response
-		Expect(res.StatusCode).To(Equal(200))
 	})
 })

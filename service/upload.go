@@ -7,7 +7,6 @@ import (
 
 	"github.com/deepakjacob/restyle/domain"
 	"github.com/deepakjacob/restyle/logger"
-	"github.com/deepakjacob/restyle/oauth"
 	"go.uber.org/zap"
 )
 
@@ -18,15 +17,16 @@ type UploadService interface {
 
 // UploadServiceImpl impl for interface
 type UploadServiceImpl struct {
+	User                func(context.Context) (*domain.User, error)
+	RandStr             func() string
 	FireStoreService    FireStoreService
 	CloudStorageService CloudStorageService
-	RandStr             func() string
 }
 
 // Upload for uploading image and associated data
 func (u *UploadServiceImpl) Upload(
 	ctx context.Context, attrs *domain.ImgAttrs, r io.Reader) error {
-	user, err := oauth.UserFromCtx(ctx)
+	user, err := u.User(ctx)
 	if err != nil {
 		logger.Log.Error("service:upload", zap.Error(err))
 		return errors.New("user not found in context")

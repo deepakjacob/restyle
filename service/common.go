@@ -45,5 +45,5 @@ type CloudStorageServiceImpl struct {
 // Upload persists the uploaded file
 func (cs *CloudStorageServiceImpl) Upload(ctx context.Context, user *domain.User,
 	bucket string, imgAttrs *domain.ImgAttrs, r io.Reader, prefixed string) error {
-	return cs.Upload(ctx, user, bucket, imgAttrs, r, prefixed)
+	return cs.CloudStorage.Upload(ctx, user, bucket, imgAttrs, r, prefixed)
 }

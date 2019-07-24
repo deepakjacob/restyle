@@ -27,7 +27,7 @@ func setupRouteHandlers() *mux.Router {
 	ctx := config.BootstrapCtx(context.Background())
 	authconfig, err := oauth.Config(ctx)
 	if err != nil {
-		logger.Log.Fatal("botstrapping context", zap.Error(err))
+		logger.Log.Fatal("bootstrapping context", zap.Error(err))
 		return nil
 	}
 	logger.Log.Info("init connections to firestore")
@@ -43,18 +43,18 @@ func setupRouteHandlers() *mux.Router {
 		return nil
 	}
 	firestoreService := &service.FireStoreServiceImpl{fsClient}
-	logger.Log.Debug("main::init", zap.Any("firestore.service", firestoreService))
-
 	cloudStorageService := &service.CloudStorageServiceImpl{csClient}
 	userService := &service.UserServiceImpl{fsClient}
 	uploadService := &service.UploadServiceImpl{
 		FireStoreService:    firestoreService,
 		CloudStorageService: cloudStorageService,
 		RandStr:             util.RandStr,
+		User:                oauth.UserFromCtx,
 	}
 
 	listService := &service.ListServiceImpl{
 		FireStoreService: firestoreService,
+		User:             oauth.UserFromCtx,
 	}
 
 	logger.Log.Debug("main::init", zap.Any("list.service", listService))
