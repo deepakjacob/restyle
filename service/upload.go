@@ -15,7 +15,11 @@ type UploadService interface {
 	Upload(context.Context, *domain.ImgAttrs, io.Reader) error
 }
 
-// UploadServiceImpl impl for interface
+// UploadServiceImpl impl of upload. In additition to upload functionality, the
+// implementation also provides a mechanism for getting the user who perform the
+// upload and to generate a random string. The reason for injecting these methods
+// on to struct rather than the interface is that during testing we can effectively
+// provide mocks instead of bypassing any existing functionality.
 type UploadServiceImpl struct {
 	User                func(context.Context) (*domain.User, error)
 	RandStr             func() string
@@ -33,7 +37,7 @@ func (u *UploadServiceImpl) Upload(
 	}
 	fileName := u.RandStr()
 	prefixed := storagePattern(attrs, fileName)
-	err = u.FireStoreService.Upload(ctx, user, attrs, fileName)
+	err = u.FireStoreService.Upload(ctx, user, attrs, prefixed)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
 		logger.Log.Error("service:upload:firestore", zap.Error(err))
