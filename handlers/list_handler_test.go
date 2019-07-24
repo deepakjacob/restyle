@@ -11,6 +11,7 @@ import (
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/mocks"
+	"github.com/deepakjacob/restyle/oauth"
 	"github.com/deepakjacob/restyle/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -45,27 +46,47 @@ var _ = Describe("List handler", func() {
 			"dress_category": "Women",
 			"tags":           `2019,onam,seematti,saree,silk,kancheepuram,handwoven,kochi`,
 		}
-
 		form := url.Values{}
 		for key, val := range data {
 			logger.Log.Debug("search::form", zap.String(key, val))
 			form.Add(key, val)
 		}
-
 		resp := httptest.NewRecorder()
 		req, err := http.NewRequest("POST", "/list", strings.NewReader(form.Encode()))
-		req.PostForm = form
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		if err != nil {
 			logger.Log.Fatal("post to list images failed", zap.Error(err))
 		}
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		creq, err := addCtxToReq(req)
+		if err != nil {
+			logger.Log.Fatal("setting user to request contexted failed", zap.Error(err))
+		}
 
 		handler := http.HandlerFunc(handler.Handle)
-		handler.ServeHTTP(resp, req)
+		handler.ServeHTTP(resp, creq)
 		Expect(resp.Code).To(Equal(200))
 		Expect(mockFireStoreService.ListCall.Receives.ImgSearch).To(
 			Equal(&domain.ImgSearch{
-				ObjType: "saree",
+				ObjType:       "saree",
+				Material:      "silk",
+				Speciality:    "kancheepuram",
+				DressCategory: "Women",
+				AgeMin:        18,
+				AgeMax:        100,
+				Tags: []string{
+					"2019",
+					"onam",
+					"seematti",
+					"saree",
+					"silk",
+					"kancheepuram",
+					"handwoven",
+					"kochi",
+				},
+				Name:        "onam 2019 collections",
+				Location:    "",
+				Branches:    nil,
+				UploadCount: 0,
 			}))
 	})
 
@@ -75,3 +96,10 @@ var _ = Describe("List handler", func() {
 	})
 
 })
+
+func addCtxToReq(req *http.Request) (*http.Request, error) {
+	return req.WithContext(oauth.UserToCtx(req.Context(), &domain.User{
+		Email:  "test@test.com",
+		UserID: "101010101",
+	})), nil
+}
