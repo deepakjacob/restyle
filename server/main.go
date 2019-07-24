@@ -50,6 +50,9 @@ func setupRouteHandlers() *mux.Router {
 		CloudStorageService: cloudStorageService,
 		RandStr:             util.RandStr,
 	}
+	listService := &service.ListServiceImpl{
+		FireStoreService: firestoreService,
+	}
 
 	auth, err := auth(authconfig, userService)
 	if err != nil {
@@ -57,6 +60,7 @@ func setupRouteHandlers() *mux.Router {
 		return nil
 	}
 	upload := upload(uploadService)
+	list := list(listService)
 
 	r := mux.NewRouter()
 
@@ -67,6 +71,7 @@ func setupRouteHandlers() *mux.Router {
 	s := r.PathPrefix("/api").Subrouter()
 	s.HandleFunc("/", indexHandler)
 	s.HandleFunc("/upload", upload.Handle)
+	s.HandleFunc("/list", list.Handle)
 
 	return r
 }
@@ -88,6 +93,11 @@ func main() {
 func upload(uploadService service.UploadService) *handlers.Upload {
 	upload := &handlers.Upload{UploadService: uploadService}
 	return upload
+}
+
+func list(listService service.ListService) *handlers.List {
+	list := &handlers.List{ListService: listService}
+	return list
 }
 
 func auth(config *oauth2.Config, userService service.UserService) (*handlers.OAuth2, error) {

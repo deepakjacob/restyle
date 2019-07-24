@@ -21,10 +21,17 @@ type List struct {
 	// CustomizationService CustomizationService
 }
 
-// Handle handles the upload of the image file along with the mandatory params
+// Handle handles the searching the mandatory params
 func (l *List) Handle(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	attrs, err := parseSearchAttrs(r.Form)
+	err := r.ParseForm()
+	if err != nil {
+		logger.Log.Error("list:handle:: error parsing form", zap.Error(err))
+		http.Error(w,
+			http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	form := r.Form
+	attrs, err := parseSearchAttrs(form)
 	if err != nil {
 		logger.Log.Error("list:handle:: error missing form fields", zap.Error(err))
 		http.Error(w,
@@ -50,6 +57,7 @@ func (l *List) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseSearchAttrs(vals url.Values) (*domain.ImgSearch, error) {
+	logger.Log.Debug("search::handler", zap.Any("form", vals))
 	objType := vals.Get("obj_type")
 	material := vals.Get("material")
 	speciality := vals.Get("speciality")
@@ -61,22 +69,27 @@ func parseSearchAttrs(vals url.Values) (*domain.ImgSearch, error) {
 	name := vals.Get("name")
 
 	valsMissing := isEmpty(objType)
-
-	minAge, err := strconv.ParseInt(ageMin, 10, 8)
-	if err != nil {
-		logger.Log.Error("error converting to number",
-			zap.String("AgeMin", ageMin))
-		return nil, errors.New("error converting min age to number")
+	var minAge, maxAge int64
+	var err error
+	if ageMin != "" {
+		minAge, err = strconv.ParseInt(ageMin, 10, 8)
+		if err != nil {
+			logger.Log.Error("error converting to number",
+				zap.String("AgeMin", ageMin))
+			return nil, errors.New("error converting min age to number")
+		}
 	}
-	maxAge, err := strconv.ParseInt(ageMax, 10, 8)
-	if err != nil {
-		logger.Log.Error("error converting to number",
-			zap.String("AgeMax", ageMax))
-		return nil, errors.New("error converting max age to number")
+	if ageMax != "" {
+		maxAge, err = strconv.ParseInt(ageMax, 10, 8)
+		if err != nil {
+			logger.Log.Error("error converting to number",
+				zap.String("AgeMax", ageMax))
+			return nil, errors.New("error converting max age to number")
+		}
 	}
 
 	if valsMissing {
-		logger.Log.Error("upload missing mandatory params", zap.String("ObjType", objType))
+		logger.Log.Error("list missing mandatory params", zap.String("ObjType", objType))
 		return nil, errors.New("missing mandatory values")
 	}
 	attrs := &domain.ImgSearch{

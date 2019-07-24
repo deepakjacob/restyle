@@ -27,14 +27,14 @@ func (u *ListServiceImpl) List(
 	ctx context.Context, attrs *domain.ImgSearch) (*domain.ImgSearchResult, error) {
 	user, err := oauth.UserFromCtx(ctx)
 	if err != nil {
-		logger.Log.Error("service:upload", zap.Error(err))
+		logger.Log.Error("service:list", zap.Error(err))
 		return nil, errors.New("user not found in context")
 	}
 	pattern := searchPattern(attrs)
 	results, err := u.FireStoreService.List(ctx, user, attrs, pattern)
 	if err != nil {
 		// TODO: add user details in logging preferably a proxy id
-		logger.Log.Error("service:upload:firestore", zap.Error(err))
+		logger.Log.Error("service:list:firestore", zap.Error(err))
 		return nil, errors.New("error in saving image attrbutes for db")
 	}
 	return results, nil
