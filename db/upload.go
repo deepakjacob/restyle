@@ -8,7 +8,7 @@ import (
 
 // Upload gets the user with the provided email.
 func (fs *FireStore) Upload(ctx context.Context, user *domain.User,
-	attrs *domain.ImgAttrs) error {
+	attrs *domain.ImgAttrs, file string) error {
 	doc := make(map[string]interface{})
 	doc["obj_type"] = attrs.ObjType
 	doc["material"] = attrs.Material            // Silk / Cotton
@@ -25,7 +25,8 @@ func (fs *FireStore) Upload(ctx context.Context, user *domain.User,
 	doc["date_to_visible"] = attrs.DateToVisible
 	doc["upload_count"] = attrs.UploadCount
 	doc["user_id"] = user.UserID
-	ref := fs.Collection("images").Doc(attrs.ObjType).Collection(attrs.Material).NewDoc()
+	doc["file"] = file
+	ref := fs.Collection("images").NewDoc()
 	_, err := ref.Set(ctx, doc)
 	if err != nil {
 		return err
