@@ -28,13 +28,13 @@ type FireStoreServiceImpl struct {
 // Upload persists attributes of a file upload
 func (fs *FireStoreServiceImpl) Upload(ctx context.Context, user *domain.User,
 	imgAttrs *domain.ImgAttrs, fileName string) error {
-	return fs.Upload(ctx, user, imgAttrs, fileName)
+	return fs.FireStore.Upload(ctx, user, imgAttrs, fileName)
 }
 
 // List persists attributes of a file upload
 func (fs *FireStoreServiceImpl) List(ctx context.Context, user *domain.User,
 	imgAttrs *domain.ImgSearch, pattern string) (*domain.ImgSearchResult, error) {
-	return fs.List(ctx, user, imgAttrs, pattern)
+	return fs.FireStore.List(ctx, user, imgAttrs, pattern)
 }
 
 // CloudStorageServiceImpl impl for firestore

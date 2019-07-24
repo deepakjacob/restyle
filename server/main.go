@@ -43,6 +43,8 @@ func setupRouteHandlers() *mux.Router {
 		return nil
 	}
 	firestoreService := &service.FireStoreServiceImpl{fsClient}
+	logger.Log.Debug("main::init", zap.Any("firestore.service", firestoreService))
+
 	cloudStorageService := &service.CloudStorageServiceImpl{csClient}
 	userService := &service.UserServiceImpl{fsClient}
 	uploadService := &service.UploadServiceImpl{
@@ -50,9 +52,12 @@ func setupRouteHandlers() *mux.Router {
 		CloudStorageService: cloudStorageService,
 		RandStr:             util.RandStr,
 	}
+
 	listService := &service.ListServiceImpl{
 		FireStoreService: firestoreService,
 	}
+
+	logger.Log.Debug("main::init", zap.Any("list.service", listService))
 
 	auth, err := auth(authconfig, userService)
 	if err != nil {
@@ -69,6 +74,7 @@ func setupRouteHandlers() *mux.Router {
 	r.HandleFunc("/error", errorHandler)
 
 	s := r.PathPrefix("/api").Subrouter()
+	s.Use(auth.Middleware)
 	s.HandleFunc("/", indexHandler)
 	s.HandleFunc("/upload", upload.Handle)
 	s.HandleFunc("/list", list.Handle)

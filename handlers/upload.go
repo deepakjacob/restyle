@@ -39,7 +39,7 @@ func (u *Upload) Handle(w http.ResponseWriter, r *http.Request) {
 			http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
+	logger.Log.Debug("calling service", zap.Any("attrs", attrs))
 	err = u.UploadService.Upload(r.Context(), attrs, file)
 	if err != nil {
 		logger.Log.Error("upload:handle:: error saving image and/or attributes", zap.Error(err))
