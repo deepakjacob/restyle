@@ -109,7 +109,6 @@ func (o *OAuth2) Middleware(next http.Handler) http.Handler {
 				http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		logger.Log.Debug("auth::middleware", zap.Any("user", user))
 		usrCtx := oauth.UserToCtx(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(usrCtx))
 	})

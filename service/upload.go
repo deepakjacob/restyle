@@ -18,8 +18,8 @@ type UploadService interface {
 // UploadServiceImpl impl of upload. In additition to upload functionality, the
 // implementation also provides a mechanism for getting the user who perform the
 // upload and to generate a random string. The reason for injecting these methods
-// on to struct rather than the interface is that during testing we can effectively
-// provide mocks instead of bypassing any existing functionality.
+// on to struct is that during testing we can effectively provide mocks instead
+// of bypassing any existing functionality.
 type UploadServiceImpl struct {
 	User                func(context.Context) (*domain.User, error)
 	RandStr             func() string
