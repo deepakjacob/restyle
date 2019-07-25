@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"os"
+
+	"github.com/deepakjacob/restyle/logger"
+	"go.uber.org/zap"
 )
 
 type envKey string
@@ -28,6 +31,10 @@ func BootstrapCtx(parent context.Context) context.Context {
 	clientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 	redirectURL := os.Getenv("REDIRECT_URL")
+
+	logger.Log.Info("env vars",
+		zap.String("projectid", projectID))
+
 	env := &Env{
 		ProjectID:    projectID,
 		ClientID:     clientID,
