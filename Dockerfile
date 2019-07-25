@@ -16,10 +16,10 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
 RUN echo $(ls -1 /app)
 
-# final stage
-FROM scratch
-COPY --from=builder /app/restyle /app/
-
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/restyle .
 
 EXPOSE 8000
-ENTRYPOINT ["/app/restyle"]
+CMD ["./restyle"]
