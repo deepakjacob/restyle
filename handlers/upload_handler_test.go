@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
 	"mime/multipart"
@@ -37,6 +38,12 @@ var _ = Describe("Upload handler", func() {
 			FireStoreService:    mockFireStoreService,
 			CloudStorageService: mockCloudStorageService,
 			RandStr:             mocks.RandStr,
+			User: func(ctx context.Context) (*domain.User, error) {
+				return &domain.User{
+					Email:  "test@test.com",
+					UserID: "10100110",
+				}, nil
+			},
 		}
 		handler = &handlers.Upload{
 			UploadService: mockUploadService,

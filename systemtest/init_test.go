@@ -18,7 +18,7 @@ var serverSession *gexec.Session
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToServerBinary, err = gexec.Build("github.com/deepakjacob/restyle/server")
+	pathToServerBinary, err = gexec.Build("github.com/deepakjacob/restyle")
 	Expect(err).NotTo(HaveOccurred())
 })
 

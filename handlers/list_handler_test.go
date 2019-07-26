@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,6 @@ import (
 	"github.com/deepakjacob/restyle/handlers"
 	"github.com/deepakjacob/restyle/logger"
 	"github.com/deepakjacob/restyle/mocks"
-	"github.com/deepakjacob/restyle/oauth"
 	"github.com/deepakjacob/restyle/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,6 +29,12 @@ var _ = Describe("List handler", func() {
 		mockFireStoreService = &mocks.FireStoreService{}
 		mockListService = &service.ListServiceImpl{
 			FireStoreService: mockFireStoreService,
+			User: func(ctx context.Context) (*domain.User, error) {
+				return &domain.User{
+					Email:  "test@test.com",
+					UserID: "10100110",
+				}, nil
+			},
 		}
 		handler = &handlers.List{
 			ListService: mockListService,
@@ -57,13 +63,8 @@ var _ = Describe("List handler", func() {
 			logger.Log.Fatal("post to list images failed", zap.Error(err))
 		}
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-		creq, err := addCtxToReq(req)
-		if err != nil {
-			logger.Log.Fatal("setting user to request contexted failed", zap.Error(err))
-		}
-
 		handler := http.HandlerFunc(handler.Handle)
-		handler.ServeHTTP(resp, creq)
+		handler.ServeHTTP(resp, req)
 		Expect(resp.Code).To(Equal(200))
 		Expect(mockFireStoreService.ListCall.Receives.ImgSearch).To(
 			Equal(&domain.ImgSearch{
@@ -96,10 +97,3 @@ var _ = Describe("List handler", func() {
 	})
 
 })
-
-func addCtxToReq(req *http.Request) (*http.Request, error) {
-	return req.WithContext(oauth.UserToCtx(req.Context(), &domain.User{
-		Email:  "test@test.com",
-		UserID: "101010101",
-	})), nil
-}
