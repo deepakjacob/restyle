@@ -67,3 +67,90 @@ gcloud container clusters create restyle-cluster
 ```
 gcloud container clusters get-credentials restyle-cluster
 ```
+
+#### Deployment
+
+```
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: restyle
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: restyle
+    spec:
+      containers:
+      - name: restyle
+        image: gcr.io/project-up-238914/restyle:0.0.1
+        ports:
+        - containerPort: 8000
+
+```
+- create the deployment using the following command
+```
+kubectl apply -f projects/restyle/deployment.yaml
+```
+- get details of deployment
+```
+kubectl get deployments restyle
+```
+
+#### Service
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: restyle
+  labels:
+    app: restyle
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: restyle-service-port
+  selector:
+    app: restyle
+
+```
+
+- create the service using the following command
+
+```
+kubectl apply -f projects/restyle/service.yaml
+
+```
+
+- get details of service
+
+```
+kubectl get service restyle --output yaml
+```
+
+```
+kubectl get pods
+```
+
+### Load Balancer to make service outside of cluster
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: restyle
+  labels:
+    app: restyle
+spec:
+  backend:
+    serviceName: restyle
+    servicePort: 80
+
+```
+
+```
+kubectl get backend-services list
+```

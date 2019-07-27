@@ -1,0 +1,10 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: restyle
+  labels:
+    app: restyle
+spec:
+  backend:
+    serviceName: restyle
+    servicePort: 80
