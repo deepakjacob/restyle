@@ -40,3 +40,30 @@ docker tag restyle_server:0.0.1 gcr.io/project-up-238914/restyle:0.0.1          
 ```
 docker push gcr.io/project-up-238914/restyle:0.0.1
 ```
+
+#### Configuring and running gcloud
+
+- get the account details
+```
+gcloud auth list
+```
+- list the current project
+```
+gcloud config list project
+```
+- set the compute zone
+```
+gcloud config set compute/zone us-central1-a
+```
+- get the gcloud context (this basically returns project / computezone etc)
+```
+kubectl config current-context
+```
+- create the container cluster
+```
+gcloud container clusters create restyle-cluster
+```
+- gcloud container clusters get-credentials - fetch credentials for a running cluster
+```
+gcloud container clusters get-credentials restyle-cluster
+```

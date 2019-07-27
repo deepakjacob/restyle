@@ -44,7 +44,7 @@ func (fs *FireStoreService) Upload(ctx context.Context, user *domain.User,
 	return fs.UploadCall.Returns.Err
 }
 
-// List
+// List mock impl for listing the file
 func (fs *FireStoreService) List(ctx context.Context, user *domain.User,
 	imgAttrs *domain.ImgSearch, pattern string) (*domain.ImgSearchResult, error) {
 	fs.ListCall.Receives.Ctx = ctx

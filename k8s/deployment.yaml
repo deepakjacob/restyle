@@ -1,16 +1,20 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echoheaders
+  name: restyle
 spec:
-  replicas: 3
+  selector:
+    matchLabels:
+      run: restyle
+  replicas: 2
   template:
     metadata:
       labels:
-        app: restyle
+        run: restyle
     spec:
       containers:
-      - name: echoheaders
-        image: gcr.io/restyle:0.0.1
-        ports:
-        - containerPort: 8443
+        - name: restyle
+          image: gcr.io/project-up-238914/restyle:0.0.1
+          ports:
+            - containerPort: 8000
+              protocol: TCP
