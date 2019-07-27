@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/app-protocols: ''
+  name: restyle
+  labels:
+    app: restyle
+spec:
+  type: NodePort
+  ports:
+  - port: 443
+    targetPort: 8443
+    protocol: TCP
+    name: restyle-service-port
+  selector:
+    app: restyle
