@@ -26,8 +26,7 @@ func (u *UserServiceImpl) Find(ctx context.Context, email string) (*domain.User,
 	user, err := u.FireStore.User(ctx, email)
 	if err != nil {
 		logger.Log.Error("service:user", zap.Error(err))
-
-		return nil, fmt.Errorf("No use with email - %s", email)
+		return nil, fmt.Errorf("No user with email - %s", email)
 	}
 	return user, nil
 }
