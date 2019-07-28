@@ -1,8 +1,8 @@
 apiVersion: v1
 data:
-  GOOGLE_OAUTH_CLIENT_ID: 368041453973-gu0p0f09560h8i96ctm41rdg8b6nnvlp.apps.googleusercontent.com
-  GOOGLE_OAUTH_CLIENT_SECRET: thF25gBCUJoofuzrepntbVGP
-  GOOGLE_PROJECT_ID: restyle
+  GOOGLE_OAUTH_CLIENT_ID: 58260807846-3k74h6g10ps11l3he4lu7c470p13oab7.apps.googleusercontent.com
+  GOOGLE_OAUTH_CLIENT_SECRET: 3VsKlkZFxE8tVWrOAkDDadMk
+  GOOGLE_PROJECT_ID: panaglam
   JWT_SHARED_ENC_KEY: itsa16bytesecret
   JWT_SHARED_KEY: secret
   REDIRECT_URL: http://panaglam.com/auth/callback
