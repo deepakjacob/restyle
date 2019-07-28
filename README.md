@@ -47,6 +47,12 @@ docker push gcr.io/project-up-238914/restyle:0.0.1
 ```
 gcloud auth list
 ```
+
+- set the project id
+```
+gcloud config set project [PROJECT_ID]
+```
+
 - list the current project
 ```
 gcloud config list project
@@ -153,4 +159,10 @@ spec:
 
 ```
 kubectl get backend-services list
+```
+
+#### Creating a configmap
+
+```
+kubectl create configmap restyle-config --from-file=/Users/jacobdeepak/Development/goprojects/gcloud_service_accounts/env.properties
 ```

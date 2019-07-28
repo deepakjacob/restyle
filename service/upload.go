@@ -60,5 +60,6 @@ func storagePattern(attrs *domain.ImgAttrs, name string) string {
 
 // TODO: get the project id from the env config
 func getDefaultBucket() string {
-	return "project_up"
+	// TODO: pass it as env variable
+	return "restyle_bucket"
 }

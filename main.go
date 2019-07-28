@@ -75,10 +75,10 @@ func setupRouteHandlers() *mux.Router {
 	r.HandleFunc("/auth", auth.Handle)
 	r.HandleFunc("/auth/callback", auth.HandleCallback)
 	r.HandleFunc("/error", errorHandler)
+	r.HandleFunc("/", indexHandler)
 
 	s := r.PathPrefix("/api").Subrouter()
 	s.Use(auth.Middleware)
-	s.HandleFunc("/", indexHandler)
 	s.HandleFunc("/upload", upload.Handle)
 	s.HandleFunc("/list", list.Handle)
 

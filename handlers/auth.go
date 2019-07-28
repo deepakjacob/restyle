@@ -85,7 +85,7 @@ func (o *OAuth2) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 	}
 	http.SetCookie(w, &cookie)
-	http.Redirect(w, r, "/api/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 //Middleware function to execute before accessing secure urls

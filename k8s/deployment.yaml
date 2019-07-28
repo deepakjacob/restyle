@@ -11,6 +11,37 @@ spec:
     spec:
       containers:
       - name: restyle
-        image: gcr.io/project-up-238914/restyle:0.0.1
+        image: gcr.io/restyle/restyle:0.0.2
+        env:
+        - name: GOOGLE_PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: GOOGLE_PROJECT_ID
+        - name: GOOGLE_OAUTH_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: GOOGLE_OAUTH_CLIENT_ID
+        - name: GOOGLE_OAUTH_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: GOOGLE_OAUTH_CLIENT_SECRET
+        - name: JWT_SHARED_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: JWT_SHARED_KEY
+        - name: JWT_SHARED_ENC_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: JWT_SHARED_ENC_KEY
+        - name: REDIRECT_URL
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: REDIRECT_URL
         ports:
         - containerPort: 8000

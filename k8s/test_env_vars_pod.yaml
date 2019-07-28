@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dapi-test-pod
+spec:
+  containers:
+    - name: test-container
+      image: k8s.gcr.io/busybox
+      #command: [ "/bin/sh", "-c", "echo $(GOOGLE_PROJECT_ID) $(GOOGLE_APPLICATION_CREDENTIALS)" ]
+      command: [ "/bin/sh", "-c", "cat /mount-9p/project-up-ed35607315b3.json" ]
+      env:
+        - name: GOOGLE_PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: GOOGLE_PROJECT_ID
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          valueFrom:
+            configMapKeyRef:
+              name: restyle-config
+              key: GOOGLE_APPLICATION_CREDENTIALS
+  restartPolicy: Never
