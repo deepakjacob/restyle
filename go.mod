@@ -4,7 +4,10 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.43.0
+	github.com/generaltso/sadbox v0.0.0-20120828195626-27893f92b8ce // indirect
+	github.com/generaltso/vibrant v0.0.0-20171030211322-563623b97aee
 	github.com/gorilla/mux v1.7.3
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1 // indirect
