@@ -2,6 +2,9 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: restyle
+  #annotations:
+    #kubernetes.io/ingress.global-static-ip-name: example-ip-address
+    #networking.gke.io/managed-certificates: example-certificate
   labels:
     app: restyle
 spec:

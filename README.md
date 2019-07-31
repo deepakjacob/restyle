@@ -166,3 +166,12 @@ kubectl get backend-services list
 ```
 kubectl create configmap restyle-config --from-file=/Users/jacobdeepak/Development/goprojects/gcloud_service_accounts/env.properties
 ```
+
+#### Create a (static) external IP address
+```
+gcloud compute addresses create panaglam-ip-address --global
+```
+- To find the static IP address created:
+```
+gcloud compute addresses describe panaglam-ip-address --global
+```
