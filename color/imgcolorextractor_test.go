@@ -19,7 +19,7 @@ func TestColor(t *testing.T) {
 		t.Error("error in opening file", err)
 	}
 	defer img.Close()
-	err = Color(img)
+	err = Colors(img)
 	if err != nil {
 		t.Errorf("error in processing file %v", err)
 	}

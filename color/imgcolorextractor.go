@@ -11,8 +11,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// Color extracts color from the provided image
-func Color(f io.Reader) error {
+// ColoExtractor extracts color from the provided reader
+type ColoExtractor interface {
+	Colors(r io.Reader) []vibrant.Color
+}
+
+// Colors extracts color from the provided reader
+func Colors(f io.Reader) error {
 	img, _, err := image.Decode(f)
 	if err != nil {
 		logger.Log.Error("image decoding failed", zap.Error(err))
