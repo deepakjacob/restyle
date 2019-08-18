@@ -69,6 +69,12 @@ func setupRouteHandlers() *mux.Router {
 	}
 	upload := upload(uploadService)
 	list := list(listService)
+	smsService, err := service.NewSmsService(ctx)
+	if err != nil {
+		logger.Log.Fatal("twilio", zap.Error(err))
+		return nil
+	}
+	sms := &handlers.Sms{smsService}
 
 	r := mux.NewRouter()
 
@@ -76,6 +82,7 @@ func setupRouteHandlers() *mux.Router {
 	r.HandleFunc("/auth/callback", auth.HandleCallback)
 	r.HandleFunc("/error", errorHandler)
 	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/sms", sms.Handle)
 
 	s := r.PathPrefix("/api").Subrouter()
 	s.Use(auth.Middleware)

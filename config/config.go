@@ -16,13 +16,16 @@ var EnvKey envKey
 
 // Env struct for env vars
 type Env struct {
-	ProjectID      string
-	AppCredentials string
-	ClientID       string
-	ClientSecret   string
-	JWTKey         string
-	JWTEncKey      string
-	RedirectURL    string
+	ProjectID        string
+	AppCredentials   string
+	ClientID         string
+	ClientSecret     string
+	JWTKey           string
+	JWTEncKey        string
+	RedirectURL      string
+	TwilioNumber     string
+	TwilioAccountSid string
+	TwilioAuthToken  string
 }
 
 // BootstrapCtx context initialization
@@ -31,15 +34,22 @@ func BootstrapCtx(parent context.Context) context.Context {
 	clientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
 	clientSecret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 	redirectURL := os.Getenv("REDIRECT_URL")
+	twilioNumber := os.Getenv("TWILIO_NUMBER")
+	twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+	twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
 
 	logger.Log.Info("env vars",
-		zap.String("projectid", projectID))
+		zap.String("projectid", twilioAccountSid))
 
 	env := &Env{
 		ProjectID:    projectID,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectURL,
+		// for twilio
+		TwilioNumber:     twilioNumber,
+		TwilioAccountSid: twilioAccountSid,
+		TwilioAuthToken:  twilioAuthToken,
 	}
 	return context.WithValue(parent, EnvKey, env)
 }
