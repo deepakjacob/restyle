@@ -13,6 +13,7 @@ import (
 type FireStoreService interface {
 	Upload(context.Context, *domain.User, *domain.ImgAttrs, string) error
 	List(context.Context, *domain.User, *domain.ImgSearch, string) (*domain.ImgSearchResult, error)
+	VerifyCode(context.Context, string, string) (bool, error)
 }
 
 // CloudStorageService cloud storage operations
@@ -23,6 +24,11 @@ type CloudStorageService interface {
 // FireStoreServiceImpl impl for firestore
 type FireStoreServiceImpl struct {
 	FireStore *db.FireStore
+}
+
+// VerifyCode verfied user provided code
+func (fs *FireStoreServiceImpl) VerifyCode(ctx context.Context, mobileNumber string, verificationCode string) (bool, error) {
+	return fs.FireStore.VerifyCode(ctx, mobileNumber, verificationCode)
 }
 
 // Upload persists attributes of a file upload

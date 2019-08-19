@@ -76,6 +76,11 @@ func setupRouteHandlers() *mux.Router {
 	}
 	sms := &handlers.Sms{smsService}
 
+	registrationService := &service.RegistrationServiceImpl{FireStoreService: firestoreService}
+	registration := &handlers.Registration{
+		RegistrationService: registrationService,
+	}
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/auth", auth.Handle)
@@ -83,6 +88,7 @@ func setupRouteHandlers() *mux.Router {
 	r.HandleFunc("/error", errorHandler)
 	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/sms", sms.Handle)
+	r.HandleFunc("/register", registration.Handle)
 
 	s := r.PathPrefix("/api").Subrouter()
 	s.Use(auth.Middleware)
