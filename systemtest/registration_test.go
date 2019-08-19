@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Registration Tests", func() {
+var _ = Describe("Registration / Verification Tests", func() {
 	It("responds to GET /registration with a status", func() {
 		mobileNumber := "4169962646"
 		verificationCode := "12345"
 		url := fmt.Sprintf(
-			"http://%s/register?mobile_number=%s&mobile_code=%s", serverAddress, mobileNumber, verificationCode)
+			"http://%s/verify?mobile_number=%s&mobile_code=%s", serverAddress, mobileNumber, verificationCode)
 		resp, err := http.Get(url)
 
 		Expect(err).NotTo(HaveOccurred())

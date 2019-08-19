@@ -15,9 +15,8 @@ type FireStoreService interface {
 	List(context.Context, *domain.User, *domain.ImgSearch,
 		string) (*domain.ImgSearchResult, error)
 	// TODO: VerifyCode to return VerificationStatus struct insead of bool
-	VerifyCode(context.Context, string, string) (bool, error)
-	RegisterMobileUser(context.Context, string, string,
-		string) (*domain.RegistrationStatus, error)
+	VerifyCode(context.Context, *domain.RegistrationAttrs) (bool, error)
+	RegisterMobileUser(context.Context, *domain.RegistrationAttrs) (*domain.RegistrationStatus, error)
 }
 
 // CloudStorageService cloud storage operations
@@ -31,10 +30,8 @@ type FireStoreServiceImpl struct {
 }
 
 // VerifyCode verfied user provided code
-func (fs *FireStoreServiceImpl) VerifyCode(
-	ctx context.Context, mobileNumber string,
-	verificationCode string) (bool, error) {
-	return fs.FireStore.VerifyCode(ctx, mobileNumber, verificationCode)
+func (fs *FireStoreServiceImpl) VerifyCode(ctx context.Context, attrs *domain.RegistrationAttrs) (bool, error) {
+	return fs.FireStore.VerifyCode(ctx, attrs)
 }
 
 // RegisterMobileUser verfied user provided code

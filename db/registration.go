@@ -15,6 +15,8 @@ func (fs *FireStore) RegisterMobileUser(ctx context.Context, attrs *domain.Regis
 	doc := make(map[string]interface{})
 	doc["verification_code"] = attrs.VerificationCode
 	doc["pin"] = attrs.Pin
+	doc["first_generated_on"] = time.Now()
+	doc["first_verified_on"] = nil
 
 	ref := fs.Collection("musers").Doc(attrs.MobileNumber)
 	_, err := ref.Set(ctx, doc)
@@ -29,8 +31,8 @@ func (fs *FireStore) RegisterMobileUser(ctx context.Context, attrs *domain.Regis
 }
 
 // VerifyCode verifies code provided by the user
-func (fs *FireStore) VerifyCode(ctx context.Context, mobileNumber, verificationCode string) (bool, error) {
-	doc := fmt.Sprintf("musers/%s", mobileNumber)
+func (fs *FireStore) VerifyCode(ctx context.Context, attrs *domain.RegistrationAttrs) (bool, error) {
+	doc := fmt.Sprintf("musers/%s", attrs.MobileNumber)
 	muser := fs.Doc(doc)
 
 	err := fs.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
@@ -44,10 +46,11 @@ func (fs *FireStore) VerifyCode(ctx context.Context, mobileNumber, verificationC
 			return err
 		}
 
-		// verificationStatus, err := doc.DataAt("verified")
-		// if err != nil {
-		// 	return err
-		// }
+		pin, err := doc.DataAt("pin")
+		if err != nil {
+			return err
+		}
+
 		verified, err := doc.DataAt("first_verified_on")
 		if err != nil {
 			return err
@@ -58,7 +61,7 @@ func (fs *FireStore) VerifyCode(ctx context.Context, mobileNumber, verificationC
 			return err
 		}
 
-		ok := code == verificationCode && blocked == false
+		ok := code == attrs.VerificationCode && pin == attrs.Pin && blocked == false
 		if ok {
 			if verified == nil {
 				return tx.Update(muser, []firestore.Update{

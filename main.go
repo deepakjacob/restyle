@@ -17,6 +17,7 @@ import (
 	"github.com/deepakjacob/restyle/storage"
 	"github.com/deepakjacob/restyle/templates"
 	"github.com/deepakjacob/restyle/util"
+
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -77,7 +78,12 @@ func setupRouteHandlers() *mux.Router {
 	sms := &handlers.Sms{smsService}
 
 	registrationService := &service.RegistrationServiceImpl{FireStoreService: firestoreService}
+
 	registration := &handlers.Registration{
+		RegistrationService: registrationService,
+	}
+
+	verification := &handlers.Verification{
 		RegistrationService: registrationService,
 	}
 
@@ -88,6 +94,7 @@ func setupRouteHandlers() *mux.Router {
 	r.HandleFunc("/error", errorHandler)
 	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/sms", sms.Handle)
+	r.HandleFunc("/verify", verification.Handle)
 	r.HandleFunc("/register", registration.Handle)
 
 	s := r.PathPrefix("/api").Subrouter()

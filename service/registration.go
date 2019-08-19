@@ -11,9 +11,9 @@ import (
 
 // RegistrationService to register and check validity mobile user registration
 type RegistrationService interface {
-	RegisterMobileUser(string, string) (*domain.RegistrationStatus, error)
+	RegisterMobileUser(context.Context, *domain.RegistrationAttrs) (*domain.RegistrationStatus, error)
 	// RegisterUser(*domain.User) (RegistrationStatus, error)
-	VerifyCode(context.Context, string, string) (bool, error)
+	VerifyCode(context.Context, *domain.RegistrationAttrs) (bool, error)
 	// GenerateCode(string) (bool, error)
 }
 
@@ -23,8 +23,8 @@ type RegistrationServiceImpl struct {
 }
 
 // RegisterMobileUser perform user registration using phone number
-func (rs *RegistrationService) RegisterMobileUser(mobileNumber string, generatedCode string, pin string) (*domain.RegistrationStatus, error) {
-	status, err := rs.FireStoreService.RegisterMobileUser(mobileNumber, generatedCode, pin)
+func (rs *RegistrationServiceImpl) RegisterMobileUser(ctx context.Context, attrs *domain.RegistrationAttrs) (*domain.RegistrationStatus, error) {
+	status, err := rs.FireStoreService.RegisterMobileUser(ctx, attrs)
 	if err != nil {
 		logger.Log.Error("service:registration:firestore", zap.Error(err))
 		return nil, errors.New("error while verifying user")
@@ -33,10 +33,10 @@ func (rs *RegistrationService) RegisterMobileUser(mobileNumber string, generated
 }
 
 // VerifyCode verifies the code provided by the user
-func (rs *RegistrationServiceImpl) VerifyCode(ctx context.Context, mobileNumber string, receivedCode string) (bool, error) {
-	b, err := rs.FireStoreService.VerifyCode(ctx, mobileNumber, receivedCode)
+func (rs *RegistrationServiceImpl) VerifyCode(ctx context.Context, attrs *domain.RegistrationAttrs) (bool, error) {
+	b, err := rs.FireStoreService.VerifyCode(ctx, attrs)
 	if err != nil {
-		logger.Log.Error("service:registration:verification:firestore", zap.Error(err))
+		logger.Log.Error("service:verification:firestore", zap.Error(err))
 		return false, errors.New("error while verifying user")
 	}
 	if b == false {
