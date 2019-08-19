@@ -12,8 +12,9 @@ var _ = Describe("Registration / Verification Tests", func() {
 	It("responds to GET /registration with a status", func() {
 		mobileNumber := "4169962646"
 		verificationCode := "12345"
+		pinCode := "12345"
 		url := fmt.Sprintf(
-			"http://%s/verify?mobile_number=%s&mobile_code=%s", serverAddress, mobileNumber, verificationCode)
+			"http://%s/verify?mobile_number=%s&mobile_code=%s&mobile_pin=%s", serverAddress, mobileNumber, verificationCode, pinCode)
 		resp, err := http.Get(url)
 
 		Expect(err).NotTo(HaveOccurred())
