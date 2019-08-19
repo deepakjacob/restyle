@@ -12,8 +12,12 @@ import (
 // FireStoreService firestore operations
 type FireStoreService interface {
 	Upload(context.Context, *domain.User, *domain.ImgAttrs, string) error
-	List(context.Context, *domain.User, *domain.ImgSearch, string) (*domain.ImgSearchResult, error)
+	List(context.Context, *domain.User, *domain.ImgSearch,
+		string) (*domain.ImgSearchResult, error)
+	// TODO: VerifyCode to return VerificationStatus struct insead of bool
 	VerifyCode(context.Context, string, string) (bool, error)
+	RegisterMobileUser(context.Context, string, string,
+		string) (*domain.RegistrationStatus, error)
 }
 
 // CloudStorageService cloud storage operations
@@ -27,8 +31,16 @@ type FireStoreServiceImpl struct {
 }
 
 // VerifyCode verfied user provided code
-func (fs *FireStoreServiceImpl) VerifyCode(ctx context.Context, mobileNumber string, verificationCode string) (bool, error) {
+func (fs *FireStoreServiceImpl) VerifyCode(
+	ctx context.Context, mobileNumber string,
+	verificationCode string) (bool, error) {
 	return fs.FireStore.VerifyCode(ctx, mobileNumber, verificationCode)
+}
+
+// RegisterMobileUser verfied user provided code
+func (fs *FireStoreServiceImpl) RegisterMobileUser(
+	ctx context.Context, attrs *domain.RegistrationAttrs) (*domain.RegistrationStatus, error) {
+	return fs.FireStore.RegisterMobileUser(ctx, attrs)
 }
 
 // Upload persists attributes of a file upload

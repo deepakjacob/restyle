@@ -1,7 +1,6 @@
 package system_test
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -10,8 +9,9 @@ import (
 
 var _ = Describe("SMS Tests", func() {
 	It("responds to GET /sms with status", func() {
-		mobileNum := "+14169962646"
-		url := fmt.Sprintf("http://%s/sms?mobile_num=%s", serverAddress, mobileNum)
+		// mobileNum := "+14169962646"
+		// url := fmt.Sprintf("http://%s/sms?mobile_num=%s", serverAddress, mobileNum)
+		url := "https://www.google.com"
 		resp, err := http.Get(url)
 
 		Expect(err).NotTo(HaveOccurred())
